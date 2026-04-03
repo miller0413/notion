@@ -1,0 +1,288 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&display=swap');
+  :root {
+    --tomato: #D85A30;
+    --tomato-light: #FAECE7;
+    --tomato-dark: #993C1D;
+    --break: #1D9E75;
+    --break-light: #E1F5EE;
+    --break-dark: #0F6E56;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  #app {
+    font-family: 'DM Mono', monospace;
+    min-height: 520px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    position: relative;
+  }
+  #mode-label {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    font-style: italic;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    color: var(--color-text-secondary);
+    margin-bottom: 2.5rem;
+    text-transform: lowercase;
+  }
+  #ring-wrap {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin-bottom: 2.5rem;
+    cursor: pointer;
+  }
+  #ring-wrap svg {
+    transform: rotate(-90deg);
+    width: 220px;
+    height: 220px;
+  }
+  #ring-bg { fill: none; stroke: var(--color-border-tertiary); stroke-width: 6; }
+  #ring-arc { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease, stroke 0.4s; }
+  #time-display {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    pointer-events: none;
+  }
+  #time-text {
+    font-size: 46px;
+    font-weight: 500;
+    letter-spacing: -2px;
+    color: var(--color-text-primary);
+    line-height: 1;
+  }
+  #round-text {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    letter-spacing: 0.12em;
+  }
+  #controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 2.5rem;
+  }
+  .btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 9px 24px;
+    border-radius: 99px;
+    border: 0.5px solid var(--color-border-secondary);
+    background: transparent;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn:hover { background: var(--color-background-secondary); }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    border-color: transparent;
+    color: white;
+    min-width: 100px;
+  }
+  #mode-tabs {
+    display: flex;
+    gap: 0;
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .tab {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 7px 18px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .tab.active { color: white; }
+  #session-dots {
+    display: flex;
+    gap: 8px;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border-secondary);
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .dot.filled { border-color: transparent; }
+</style>
+
+<div id="app">
+  <div id="mode-label">work session</div>
+  <div id="ring-wrap" title="點擊開始/暫停">
+    <svg viewBox="0 0 220 220">
+      <circle class="ring-bg" cx="110" cy="110" r="98" fill="none" stroke-width="6" stroke="var(--color-border-tertiary)" />
+      <circle id="ring-arc" cx="110" cy="110" r="98" />
+    </svg>
+    <div id="time-display">
+      <span id="time-text">25:00</span>
+      <span id="round-text">round 1 / 4</span>
+    </div>
+  </div>
+  <div id="controls">
+    <button class="btn" id="btn-reset">reset</button>
+    <button class="btn btn-primary" id="btn-start">start</button>
+    <button class="btn" id="btn-skip">skip</button>
+  </div>
+  <div id="mode-tabs">
+    <button class="tab active" data-mode="work" data-mins="25">pomodoro</button>
+    <button class="tab" data-mode="short" data-mins="5">short break</button>
+    <button class="tab" data-mode="long" data-mins="15">long break</button>
+  </div>
+  <div id="session-dots"></div>
+</div>
+
+<script>
+const SESSIONS = 4;
+const CONFIG = { work: 25*60, short: 5*60, long: 15*60 };
+const COLORS = { work: '#D85A30', short: '#1D9E75', long: '#0F6E56' };
+const LABELS = { work: 'work session', short: 'short break', long: 'long break' };
+
+let mode = 'work';
+let totalSecs = CONFIG[mode];
+let remaining = totalSecs;
+let running = false;
+let timer = null;
+let session = 1;
+
+const arc = document.getElementById('ring-arc');
+const timeText = document.getElementById('time-text');
+const roundText = document.getElementById('round-text');
+const modeLabel = document.getElementById('mode-label');
+const btnStart = document.getElementById('btn-start');
+const btnReset = document.getElementById('btn-reset');
+const btnSkip = document.getElementById('btn-skip');
+const dotsWrap = document.getElementById('session-dots');
+const tabs = document.querySelectorAll('.tab');
+const ringWrap = document.getElementById('ring-wrap');
+const btnPrimary = document.querySelector('.btn-primary');
+
+const C = 2 * Math.PI * 98;
+arc.style.strokeDasharray = C;
+
+function updateArc() {
+  const pct = remaining / totalSecs;
+  arc.style.strokeDashoffset = C * (1 - pct);
+  arc.style.stroke = COLORS[mode];
+}
+
+function fmt(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function updateDots() {
+  dotsWrap.innerHTML = '';
+  for (let i = 1; i <= SESSIONS; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < session ? ' filled' : '');
+    if (i < session) d.style.background = COLORS.work;
+    dotsWrap.appendChild(d);
+  }
+}
+
+function setMode(m, mins) {
+  clearInterval(timer);
+  running = false;
+  mode = m;
+  totalSecs = mins ? mins * 60 : CONFIG[m];
+  remaining = totalSecs;
+  btnStart.textContent = 'start';
+  modeLabel.textContent = LABELS[m];
+  btnPrimary.style.background = COLORS[m];
+  tabs.forEach(t => {
+    t.classList.toggle('active', t.dataset.mode === m);
+    if (t.classList.contains('active')) {
+      t.style.background = COLORS[m];
+      t.style.color = 'white';
+    } else {
+      t.style.background = '';
+      t.style.color = '';
+    }
+  });
+  updateArc();
+  timeText.textContent = fmt(remaining);
+  roundText.textContent = `round ${session} / ${SESSIONS}`;
+}
+
+function tick() {
+  if (remaining <= 0) {
+    clearInterval(timer);
+    running = false;
+    btnStart.textContent = 'start';
+    if (mode === 'work') {
+      session = session < SESSIONS ? session + 1 : 1;
+    }
+    updateDots();
+    return;
+  }
+  remaining--;
+  timeText.textContent = fmt(remaining);
+  roundText.textContent = `round ${session} / ${SESSIONS}`;
+  updateArc();
+}
+
+btnStart.addEventListener('click', () => {
+  if (running) {
+    clearInterval(timer);
+    running = false;
+    btnStart.textContent = 'start';
+  } else {
+    running = true;
+    btnStart.textContent = 'pause';
+    timer = setInterval(tick, 1000);
+  }
+});
+
+btnReset.addEventListener('click', () => {
+  clearInterval(timer);
+  running = false;
+  btnStart.textContent = 'start';
+  remaining = totalSecs;
+  timeText.textContent = fmt(remaining);
+  updateArc();
+});
+
+btnSkip.addEventListener('click', () => {
+  clearInterval(timer);
+  running = false;
+  if (mode === 'work') {
+    session = session < SESSIONS ? session + 1 : 1;
+    updateDots();
+    setMode(session === 1 ? 'long' : 'short');
+    tabs.forEach(t => t.classList.remove('active'));
+  } else {
+    setMode('work');
+  }
+});
+
+ringWrap.addEventListener('click', (e) => {
+  if (e.target !== ringWrap && e.target !== ringWrap.querySelector('svg')) return;
+  btnStart.click();
+});
+
+tabs.forEach(t => {
+  t.addEventListener('click', () => setMode(t.dataset.mode, parseInt(t.dataset.mins)));
+});
+
+setMode('work');
+updateDots();
+btnPrimary.style.background = COLORS.work;
+</script>
