@@ -1,0 +1,242 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+
+  .wrap { display: flex; gap: 24px; align-items: flex-start; padding: 1.5rem 1rem; flex-wrap: wrap; }
+
+  .left { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+  .wheel-container { position: relative; width: 240px; height: 240px; }
+  canvas#wheel { border-radius: 50%; display: block; }
+  .needle {
+    position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 22px solid #D85A30;
+    z-index: 5;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
+  }
+  .center-btn {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--color-background-primary);
+    border: 2px solid var(--color-border-primary);
+    color: var(--color-text-primary);
+    font-size: 11px; font-weight: 500;
+    cursor: pointer; z-index: 6;
+    display: flex; align-items: center; justify-content: center;
+    letter-spacing: 0.02em;
+  }
+  .center-btn:hover { background: var(--color-background-secondary); }
+  .center-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .result-box {
+    min-height: 36px; padding: 8px 16px;
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-secondary);
+    font-size: 13px; color: var(--color-text-secondary);
+    text-align: center; max-width: 240px; width: 100%;
+    transition: background 0.3s;
+  }
+  .result-box.hit {
+    background: var(--color-background-info);
+    color: var(--color-text-info);
+    font-weight: 500;
+  }
+
+  .right { display: flex; flex-direction: column; gap: 12px; min-width: 180px; flex: 1; }
+
+  .count-row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--color-text-secondary);
+  }
+  .count-btn {
+    width: 28px; height: 28px; border-radius: var(--border-radius-md);
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary); cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .count-btn:hover { background: var(--color-background-secondary); }
+
+  .inputs { display: flex; flex-direction: column; gap: 6px; }
+  .item-row { display: flex; align-items: center; gap: 8px; }
+  .color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .task-input {
+    flex: 1; height: 32px; padding: 0 10px;
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    font-size: 13px; font-family: var(--font-sans);
+    outline: none;
+  }
+  .task-input:focus { border-color: var(--color-border-secondary); }
+  .task-input::placeholder { color: var(--color-text-tertiary); }
+</style>
+
+<div class="wrap">
+  <div class="left">
+    <div class="wheel-container">
+      <div class="needle"></div>
+      <canvas id="wheel" width="240" height="240"></canvas>
+      <button class="center-btn" id="spinBtn">SPIN</button>
+    </div>
+    <div class="result-box" id="result">按 SPIN 開始轉動</div>
+  </div>
+
+  <div class="right">
+    <div class="count-row">
+      <button class="count-btn" id="subBtn">-</button>
+      <span id="countLabel">4 個選項</span>
+      <button class="count-btn" id="addBtn">+</button>
+    </div>
+    <div class="inputs" id="inputList"></div>
+  </div>
+</div>
+
+<script>
+const COLORS = [
+  '#4A90D9', '#E07B54', '#5BAD8A', '#9B72CF',
+  '#E0B84A', '#D96B8A', '#6BAED6', '#74C476',
+  '#FD8D3C', '#9E9AC8'
+];
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const spinBtn = document.getElementById('spinBtn');
+const resultBox = document.getElementById('result');
+const inputList = document.getElementById('inputList');
+const addBtn = document.getElementById('addBtn');
+const subBtn = document.getElementById('subBtn');
+const countLabel = document.getElementById('countLabel');
+
+let numItems = 4;
+let currentAngle = 0;
+let spinning = false;
+let inputs = [];
+
+function getLabels() {
+  return inputs.map((el, i) => el.value.trim() || `選項 ${i + 1}`);
+}
+
+function drawWheel(angle) {
+  const cx = 120, cy = 120, r = 115;
+  const n = numItems;
+  const arc = (2 * Math.PI) / n;
+  ctx.clearRect(0, 0, 240, 240);
+
+  for (let i = 0; i < n; i++) {
+    const start = angle + i * arc;
+    const end = start + arc;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    ctx.fillStyle = COLORS[i % COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + arc / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#fff';
+    ctx.font = '500 12px sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+    ctx.shadowBlur = 2;
+    const label = getLabels()[i];
+    const maxLen = 10;
+    const txt = label.length > maxLen ? label.slice(0, maxLen) + '…' : label;
+    ctx.fillText(txt, r - 10, 4);
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, 20, 0, 2 * Math.PI);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function buildInputs() {
+  inputList.innerHTML = '';
+  inputs = [];
+  countLabel.textContent = `${numItems} 個選項`;
+  for (let i = 0; i < numItems; i++) {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+
+    const dot = document.createElement('div');
+    dot.className = 'color-dot';
+    dot.style.background = COLORS[i % COLORS.length];
+
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'task-input';
+    inp.placeholder = `選項 ${i + 1}`;
+    inp.addEventListener('input', () => drawWheel(currentAngle));
+
+    row.appendChild(dot);
+    row.appendChild(inp);
+    inputList.appendChild(row);
+    inputs.push(inp);
+  }
+  drawWheel(currentAngle);
+}
+
+addBtn.onclick = () => { if (numItems < 10) { numItems++; buildInputs(); } };
+subBtn.onclick = () => { if (numItems > 2) { numItems--; buildInputs(); } };
+
+spinBtn.onclick = () => {
+  if (spinning) return;
+  spinning = true;
+  spinBtn.disabled = true;
+  resultBox.className = 'result-box';
+  resultBox.textContent = '轉動中…';
+
+  const extraSpins = (5 + Math.random() * 5) * 2 * Math.PI;
+  const randomStop = Math.random() * 2 * Math.PI;
+  const target = currentAngle + extraSpins + randomStop;
+  const duration = 4000;
+  const start = performance.now();
+  const startAngle = currentAngle;
+
+  function ease(t) {
+    return 1 - Math.pow(1 - t, 4);
+  }
+
+  function animate(now) {
+    const elapsed = now - start;
+    const t = Math.min(elapsed / duration, 1);
+    currentAngle = startAngle + (target - startAngle) * ease(t);
+    drawWheel(currentAngle);
+
+    if (t < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      currentAngle = target % (2 * Math.PI);
+      spinning = false;
+      spinBtn.disabled = false;
+
+      const arc = (2 * Math.PI) / numItems;
+      const normalized = ((2 * Math.PI) - (currentAngle % (2 * Math.PI))) % (2 * Math.PI);
+      const idx = Math.floor(normalized / arc) % numItems;
+      const winner = getLabels()[idx];
+
+      resultBox.className = 'result-box hit';
+      resultBox.textContent = `結果：${winner}`;
+    }
+  }
+
+  requestAnimationFrame(animate);
+};
+
+buildInputs();
+</script>
