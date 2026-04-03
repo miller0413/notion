@@ -29,7 +29,7 @@
 ![內嵌版截圖](./image/compact.png)
 
 ### 版本三：隨手隨畫小白板 (by Claude)
-![小白板截圖](./image/whiteboard.png) 
+![小白板截圖](./image/wd.png) 
 *(註：請將你的小白板截圖命名為 whiteboard.png 並放進 image 資料夾)*
 
 ## 🛠️ 工具使用說明
