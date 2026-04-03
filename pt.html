@@ -2,29 +2,34 @@
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
   :root { --accent: #D85A30; }
   
-  /* 完全移除邊距，讓內容直達頂端 */
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  
   body { background: transparent; overflow: hidden; }
 
   #app { 
     font-family: 'DM Mono', monospace; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center;
-    position: absolute; /* 強制置頂 */
+    position: absolute;
     top: 0;
     left: 50%;
     transform: translateX(-50%);
+    width: 160px;
+    height: 160px;
   }
   
-  /* 圓環與頂部完全無縫 */
-  #ring-wrap { position: relative; width: 160px; height: 160px; margin-bottom: 0.8rem; }
+  #ring-wrap { position: relative; width: 160px; height: 160px; }
   #ring-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
   #ring-arc { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.5s linear; }
   #ring-bg { fill: none; stroke: #eee; stroke-width: 5; }
   
-  #time-display { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #internal-ui { 
+    position: absolute; 
+    inset: 0; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    padding-top: 5px; /* 稍微調整整體高度平衡 */
+  }
+
   #time-text { 
     font-size: 32px; 
     font-weight: 500; 
@@ -32,22 +37,40 @@
     border: none; 
     background: transparent; 
     text-align: center; 
-    width: 110px; 
+    width: 100px; 
     color: #333; 
-    outline: none; 
+    outline: none;
+    margin-top: -10px; /* 稍微往上提 */
   }
   
-  #controls { display: flex; gap: 8px; }
+  #controls { 
+    display: flex; 
+    gap: 6px; 
+    justify-content: center; 
+    margin-top: 10px; /* 增加與文字之間的間距 */
+  }
+  
   .btn { 
     font-family: inherit; 
-    font-size: 12px; 
-    padding: 6px 16px; 
-    border-radius: 99px; 
+    font-size: 9px; 
+    padding: 3px 8px; 
+    border-radius: 4px; 
     border: 1px solid #ddd; 
-    background: white; 
+    background: rgba(255,255,255,0.9); 
     cursor: pointer; 
+    color: #666;
+    transition: all 0.2s;
   }
-  .btn-primary { background: var(--accent); color: white; border-color: transparent; }
+  
+  .btn:hover { background: #f5f5f5; border-color: #ccc; }
+  
+  .btn-primary { 
+    background: var(--accent); 
+    color: white; 
+    border-color: transparent; 
+  }
+  
+  .btn-primary:hover { background: #c04f2a; }
 </style>
 
 <div id="app">
@@ -56,13 +79,13 @@
       <circle id="ring-bg" cx="80" cy="80" r="75" />
       <circle id="ring-arc" cx="80" cy="80" r="75" />
     </svg>
-    <div id="time-display">
-      <input type="text" id="time-text" value="25:00">
+    <div id="internal-ui">
+      <input type="text" id="time-text" value="25:00" spellcheck="false">
+      <div id="controls">
+        <button class="btn" id="btn-reset">Reset</button>
+        <button class="btn btn-primary" id="btn-start">Start</button>
+      </div>
     </div>
-  </div>
-  <div id="controls">
-    <button class="btn" id="btn-reset">Reset</button>
-    <button class="btn btn-primary" id="btn-start">Start</button>
   </div>
 </div>
 
