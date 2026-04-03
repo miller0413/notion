@@ -1,0 +1,101 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+  :root { --accent: #D85A30; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  #app { font-family: 'DM Mono', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; /* 縮小高度 */ }
+  #ring-wrap { position: relative; width: 160px; height: 160px; margin-bottom: 1.5rem; /* 縮小尺寸與間距 */ }
+  #ring-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  #ring-arc { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.5s linear; /* 稍微變細細條 */ }
+  #ring-bg { fill: none; stroke: #eee; stroke-width: 5; }
+  #time-display { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #time-text { font-size: 32px; font-weight: 500; cursor: pointer; border: none; background: transparent; text-align: center; width: 110px; color: #333; outline: none; /* 縮小字體與寬度 */ }
+  #controls { display: flex; gap: 8px; /* 縮小間距 */ }
+  .btn { font-family: inherit; font-size: 12px; padding: 6px 16px; border-radius: 99px; border: 1px solid #ddd; background: white; cursor: pointer; /* 縮小按鈕與字體 */ }
+  .btn-primary { background: var(--accent); color: white; border-color: transparent; }
+</style>
+
+<div id="app">
+  <div id="ring-wrap">
+    <svg viewBox="0 0 160 160"> <circle id="ring-bg" cx="80" cy="80" r="75" /> <circle id="ring-arc" cx="80" cy="80" r="75" />
+    </svg>
+    <div id="time-display">
+      <input type="text" id="time-text" value="25:00" title="點擊設定分鐘">
+    </div>
+  </div>
+  <div id="controls">
+    <button class="btn" id="btn-reset">Reset</button>
+    <button class="btn btn-primary" id="btn-start">Start</button>
+  </div>
+</div>
+
+<script>
+let totalSecs = 25 * 60, remaining = totalSecs, running = false, timer = null;
+const arc = document.getElementById('ring-arc'), timeText = document.getElementById('time-text');
+const btnStart = document.getElementById('btn-start'), btnReset = document.getElementById('btn-reset');
+
+// 更新圓周長計算 (r=75)
+const C = 2 * Math.PI * 75;
+arc.style.strokeDasharray = C;
+
+function updateView() {
+  const m = Math.floor(remaining / 60), s = remaining % 60;
+  // 保持顯示格式為 MM:SS
+  timeText.value = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  arc.style.strokeDashoffset = C * (1 - remaining / totalSecs);
+}
+
+// 點擊文字設定時間
+timeText.addEventListener('change', () => {
+  let val = parseInt(timeText.value);
+  if (isNaN(val) || val <= 0) val = 25; // 預設 25 分鐘
+  totalSecs = val * 60;
+  remaining = totalSecs;
+  if (running) { // 如果在運行中更改，先停止
+    clearInterval(timer);
+    running = false;
+    btnStart.textContent = 'Start';
+  }
+  updateView();
+});
+
+// 為了讓使用者在輸入時更方便，點擊時全選文字
+timeText.addEventListener('click', () => {
+  if (!running) timeText.select();
+});
+
+btnStart.addEventListener('click', () => {
+  if (running) {
+    clearInterval(timer);
+    btnStart.textContent = 'Start';
+  } else {
+    // 確保輸入框失去焦點，套用新的時間
+    timeText.blur();
+    timer = setInterval(() => {
+      if (remaining <= 0) {
+        clearInterval(timer);
+        running = false;
+        btnStart.textContent = 'Start';
+        remaining = 0; // 確保不變成負數
+        updateView();
+        alert("時間到！"); // 簡單的提示
+        return;
+      }
+      remaining--;
+      updateView();
+    }, 1000);
+    btnStart.textContent = 'Pause';
+  }
+  running = !running;
+});
+
+btnReset.addEventListener('click', () => {
+  clearInterval(timer);
+  running = false;
+  remaining = totalSecs;
+  btnStart.textContent = 'Start';
+  updateView();
+});
+
+// 初始更新
+updateView();
+</script>
