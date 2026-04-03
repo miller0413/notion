@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Miller's Board</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+  :root { --bg: #f8f8f8; --border: #ddd; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Mono', monospace; background: #fff; overflow: hidden; touch-action: none; }
+  #wb-wrap { display: flex; flex-direction: column; height: 100vh; }
+  #toolbar {
+    display: flex; align-items: center; gap: 8px; padding: 10px;
+    background: var(--bg); border-bottom: 1px solid var(--border); z-index: 10;
+    flex-wrap: nowrap; overflow-x: auto;
+  }
+  .tool-btn {
+    width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--border);
+    background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0; transition: background 0.1s;
+  }
+  .tool-btn.active { background: #e0e0e0; border-color: #999; }
+  .sep { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; margin: 0 2px; }
+  #color-row { display: flex; gap: 6px; align-items: center; }
+  .color-dot { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; transition: border-color 0.1s; }
+  .color-dot.active { border-color: #333; }
+  .slider-group { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #666; white-space: nowrap; }
+  input[type="range"] { width: 60px; cursor: pointer; }
+  #canvas-wrap { position: relative; flex-grow: 1; overflow: hidden; }
+  canvas { position: absolute; top: 0; left: 0; display: block; }
+  #eraser-cursor {
+    position: fixed; pointer-events: none; border: 1.5px solid #999; border-radius: 50%;
+    background: rgba(0,0,0,0.06); display: none; z-index: 1000;
+    transform: translate(-50%, -50%);
+  }
+  #bottom-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 15px; background: var(--bg); border-top: 1px solid var(--border);
+    font-size: 11px; color: #888;
+  }
+  .action-btn { padding: 3px 10px; border-radius: 4px; border: 1px solid #ccc; background: white; cursor: pointer; font-family: inherit; }
+  .action-btn:hover { background: #f0f0f0; }
+</style>
+</head>
+<body>
+<div id="wb-wrap">
+  <div id="toolbar">
+    <button class="tool-btn" id="t-pan" title="拖移畫布">✋</button>
+    <button class="tool-btn" id="t-select" title="選取移動">↖</button>
+    <div class="sep"></div>
+    <button class="tool-btn active" id="t-pen" title="畫筆">✏️</button>
+    <button class="tool-btn" id="t-eraser" title="橡皮擦">🧽</button>
+    <button class="tool-btn" id="t-rect" title="方形">⬛</button>
+    <button class="tool-btn" id="t-circle" title="圓形">⭕</button>
+    <div class="sep"></div>
+    <div id="color-row">
+      <div class="color-dot active" style="background:#1a1a1a;" data-color="#1a1a1a"></div>
+      <div class="color-dot" style="background:#E24B4A;" data-color="#E24B4A"></div>
+      <div class="color-dot" style="background:#378ADD;" data-color="#378ADD"></div>
+      <div class="color-dot" style="background:#1D9E75;" data-color="#1D9E75"></div>
+      <div class="color-dot" style="background:#EF9F27;" data-color="#EF9F27"></div>
+    </div>
+    <div class="sep"></div>
+    <div class="slider-group">
+      <span>粗細</span>
+      <input type="range" min="1" max="20" value="3" id="pen-size">
+      <span id="pen-size-val">3</span>
+    </div>
+    <div class="slider-group">
+      <span>橡皮</span>
+      <input type="range" min="10" max="80" value="24" id="eraser-size">
+      <span id="eraser-size-val">24</span>
+    </div>
+  </div>
+ 
+  <div id="canvas-wrap">
+    <canvas id="main-canvas"></canvas>
+    <canvas id="preview-canvas" style="pointer-events:none;"></canvas>
+    <div id="eraser-cursor"></div>
+  </div>
+ 
+  <div id="bottom-bar">
+    <span>Miller's Board &nbsp;|&nbsp; <span id="mode-text">畫筆</span></span>
+    <div style="display:flex;gap:8px;">
+      <button class="action-btn" id="btn-undo">復原</button>
+      <button class="action-btn" id="btn-clear">清除全部</button>
+    </div>
+  </div>
+</div>
+ 
+<div id="eraser-cursor"></div>
+ 
+<script>
+const canvas = document.getElementById('main-canvas');
+const ctx = canvas.getContext('2d');
+const pCanvas = document.getElementById('preview-canvas');
+const pctx = pCanvas.getContext('2d');
+const eCursor = document.getElementById('eraser-cursor');
+const modeText = document.getElementById('mode-text');
+ 
+let tool = 'pen';
+let color = '#1a1a1a';
+let penSize = 3;
+let eraserSize = 24;
+let shapes = [];
+let history = [];
+let isDown = false;
+let camera = { x: 0, y: 0 };
+let dragStart = { x: 0, y: 0 };
+let camStart = { x: 0, y: 0 };
+let drawStart = { x: 0, y: 0 };
+let lastPos = { x: 0, y: 0 };
+let currentShape = null;
+let selectedShape = null;
+let selectedOffset = { x: 0, y: 0 };
+ 
+function resize() {
+  const w = canvas.parentElement.clientWidth;
+  const h = canvas.parentElement.clientHeight;
+  canvas.width = pCanvas.width = w;
+  canvas.height = pCanvas.height = h;
+  redraw();
+}
+window.addEventListener('resize', resize);
+resize();
+ 
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - r.left - camera.x),
+    y: (src.clientY - r.top - camera.y)
+  };
+}
+ 
+function getRaw(e) {
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX, y: src.clientY };
+}
+ 
+function applyCtx(c, s) {
+  c.strokeStyle = s.color;
+  c.lineWidth = s.size;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  c.setLineDash([]);
+}
+ 
+function drawShape(c, s, dashed) {
+  c.save();
+  applyCtx(c, s);
+  if (dashed) c.setLineDash([6, 4]);
+  c.beginPath();
+  if (s.type === 'pen') {
+    if (!s.points || s.points.length === 0) { c.restore(); return; }
+    s.points.forEach((p, i) => i === 0 ? c.moveTo(p.x, p.y) : c.lineTo(p.x, p.y));
+    c.stroke();
+  } else if (s.type === 'rect') {
+    c.strokeRect(s.x, s.y, s.w, s.h);
+  } else if (s.type === 'circle') {
+    if (s.rx === 0 && s.ry === 0) { c.restore(); return; }
+    c.ellipse(s.cx, s.cy, Math.abs(s.rx), Math.abs(s.ry), 0, 0, Math.PI * 2);
+    c.stroke();
+  }
+  c.restore();
+}
+ 
+function redraw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(camera.x, camera.y);
+  shapes.forEach(s => drawShape(ctx, s, s === selectedShape));
+  ctx.restore();
+}
+ 
+function saveHistory() {
+  history.push(JSON.stringify(shapes));
+  if (history.length > 40) history.shift();
+}
+ 
+function undo() {
+  if (!history.length) return;
+  shapes = JSON.parse(history.pop());
+  selectedShape = null;
+  redraw();
+}
+ 
+function clearAll() {
+  saveHistory();
+  shapes = [];
+  selectedShape = null;
+  redraw();
+}
+ 
+function hitTest(s, p) {
+  if (s.type === 'rect') {
+    const x0 = Math.min(s.x, s.x + s.w), x1 = Math.max(s.x, s.x + s.w);
+    const y0 = Math.min(s.y, s.y + s.h), y1 = Math.max(s.y, s.y + s.h);
+    return p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1;
+  }
+  if (s.type === 'circle') {
+    return Math.hypot(p.x - s.cx, p.y - s.cy) <= Math.max(Math.abs(s.rx), Math.abs(s.ry));
+  }
+  if (s.type === 'pen') {
+    return s.points.some(pt => Math.hypot(p.x - pt.x, p.y - pt.y) < Math.max(s.size + 4, 8));
+  }
+  return false;
+}
+ 
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  isDown = true;
+  const p = getPos(e);
+  const raw = getRaw(e);
+  drawStart = { ...p };
+  dragStart = { ...raw };
+  camStart = { ...camera };
+  lastPos = { ...p };
+  canvas.setPointerCapture(e.pointerId);
+ 
+  if (tool === 'pan') return;
+ 
+  if (tool === 'select') {
+    selectedShape = null;
+    for (let i = shapes.length - 1; i >= 0; i--) {
+      if (hitTest(shapes[i], p)) {
+        selectedShape = shapes[i];
+        if (selectedShape.type === 'rect') {
+          selectedOffset = { x: p.x - selectedShape.x, y: p.y - selectedShape.y };
+        } else if (selectedShape.type === 'circle') {
+          selectedOffset = { x: p.x - selectedShape.cx, y: p.y - selectedShape.cy };
+        } else {
+          selectedOffset = { x: p.x - selectedShape.points[0].x, y: p.y - selectedShape.points[0].y };
+        }
+        break;
+      }
+    }
+    redraw();
+    return;
+  }
+ 
+  if (tool === 'eraser') {
+    saveHistory();
+    return;
+  }
+ 
+  saveHistory();
+  if (tool === 'pen') {
+    currentShape = { type: 'pen', color, size: penSize, points: [p] };
+  } else if (tool === 'rect') {
+    currentShape = { type: 'rect', color, size: penSize, x: p.x, y: p.y, w: 0, h: 0 };
+  } else if (tool === 'circle') {
+    currentShape = { type: 'circle', color, size: penSize, cx: p.x, cy: p.y, rx: 0, ry: 0 };
+  }
+});
+ 
+window.addEventListener('pointermove', e => {
+  const p = getPos(e);
+  const raw = getRaw(e);
+ 
+  if (tool === 'eraser') {
+    eCursor.style.display = 'block';
+    eCursor.style.left = raw.x + 'px';
+    eCursor.style.top = raw.y + 'px';
+    eCursor.style.width = eCursor.style.height = eraserSize + 'px';
+    if (isDown) {
+      const r = eraserSize / 2;
+      let changed = false;
+      const next = [];
+      shapes.forEach(s => {
+        if (s.type === 'pen') {
+          let seg = [];
+          s.points.forEach(pt => {
+            if (Math.hypot(p.x - pt.x, p.y - pt.y) <= r) {
+              if (seg.length > 1) next.push({ ...s, points: seg });
+              seg = [];
+              changed = true;
+            } else {
+              seg.push(pt);
+            }
+          });
+          if (seg.length > 1) next.push({ ...s, points: seg });
+        } else if (s.type === 'rect') {
+          const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
+          if (Math.hypot(p.x - cx, p.y - cy) > r) next.push(s); else changed = true;
+        } else if (s.type === 'circle') {
+          if (Math.hypot(p.x - s.cx, p.y - s.cy) > r) next.push(s); else changed = true;
+        } else {
+          next.push(s);
+        }
+      });
+      shapes = next;
+      if (changed) redraw();
+    }
+    return;
+  } else {
+    eCursor.style.display = 'none';
+  }
+ 
+  if (!isDown) return;
+ 
+  if (tool === 'pan') {
+    camera.x = camStart.x + (raw.x - dragStart.x);
+    camera.y = camStart.y + (raw.y - dragStart.y);
+    redraw();
+    return;
+  }
+ 
+  if (tool === 'select' && selectedShape) {
+    const dx = p.x - lastPos.x;
+    const dy = p.y - lastPos.y;
+    if (selectedShape.type === 'rect') {
+      selectedShape.x += dx; selectedShape.y += dy;
+    } else if (selectedShape.type === 'circle') {
+      selectedShape.cx += dx; selectedShape.cy += dy;
+    } else if (selectedShape.type === 'pen') {
+      selectedShape.points = selectedShape.points.map(pt => ({ x: pt.x + dx, y: pt.y + dy }));
+    }
+    lastPos = { ...p };
+    redraw();
+    return;
+  }
+ 
+  if (!currentShape) return;
+ 
+  if (tool === 'pen') {
+    currentShape.points.push(p);
+    redraw();
+    ctx.save();
+    ctx.translate(camera.x, camera.y);
+    drawShape(ctx, currentShape);
+    ctx.restore();
+  } else {
+    if (tool === 'rect') {
+      currentShape.w = p.x - drawStart.x;
+      currentShape.h = p.y - drawStart.y;
+    } else if (tool === 'circle') {
+      currentShape.rx = (p.x - drawStart.x) / 2;
+      currentShape.ry = (p.y - drawStart.y) / 2;
+      currentShape.cx = drawStart.x + currentShape.rx;
+      currentShape.cy = drawStart.y + currentShape.ry;
+    }
+    pctx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+    pctx.save();
+    pctx.translate(camera.x, camera.y);
+    drawShape(pctx, currentShape);
+    pctx.restore();
+  }
+});
+ 
+window.addEventListener('pointerup', () => {
+  if (!isDown) return;
+  isDown = false;
+  if (currentShape) {
+    if (
+      (currentShape.type === 'pen' && currentShape.points.length > 1) ||
+      (currentShape.type === 'rect' && (currentShape.w !== 0 || currentShape.h !== 0)) ||
+      (currentShape.type === 'circle' && (currentShape.rx !== 0 || currentShape.ry !== 0))
+    ) {
+      shapes.push(currentShape);
+    }
+    currentShape = null;
+    pctx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+    redraw();
+  }
+ 
+});
+ 
+document.querySelectorAll('.tool-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    tool = btn.id.replace('t-', '');
+    const labels = { pen: '畫筆', eraser: '橡皮擦', rect: '方形', circle: '圓形', pan: '拖移', select: '選取' };
+    modeText.textContent = labels[tool] || tool;
+    canvas.style.cursor = tool === 'pan' ? 'grab' : tool === 'select' ? 'default' : 'crosshair';
+    if (tool !== 'eraser') eCursor.style.display = 'none';
+    selectedShape = null;
+    redraw();
+  });
+});
+ 
+document.querySelectorAll('.color-dot').forEach(dot => {
+  dot.addEventListener('click', () => {
+    color = dot.dataset.color;
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+    dot.classList.add('active');
+  });
+});
+ 
+document.getElementById('pen-size').addEventListener('input', e => {
+  penSize = parseInt(e.target.value);
+  document.getElementById('pen-size-val').textContent = penSize;
+});
+document.getElementById('eraser-size').addEventListener('input', e => {
+  eraserSize = parseInt(e.target.value);
+  document.getElementById('eraser-size-val').textContent = eraserSize;
+  eCursor.style.width = eCursor.style.height = eraserSize + 'px';
+});
+ 
+document.getElementById('btn-undo').addEventListener('click', undo);
+document.getElementById('btn-clear').addEventListener('click', clearAll);
+window.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>
+ 
