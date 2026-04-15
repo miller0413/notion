@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z-Score 互動視覺化</title>
+    <style>
+        :root {
+            --primary-blue: #3b82f6;
+            --bg-color: #ffffff;
+            --text-color: #374151;
+            --slider-bg: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            display: flex;
+            width: 900px;
+            max-width: 95%;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid #f3f4f6;
+            gap: 40px;
+        }
+
+        /* 左側控制面板 */
+        .controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .formula {
+            font-size: 1.8rem;
+            text-align: center;
+            margin-bottom: 40px;
+            font-style: italic;
+            font-family: "Times New Roman", serif;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+
+        .label {
+            width: 25px;
+            font-size: 1.2rem;
+            font-style: italic;
+            font-family: "Times New Roman", serif;
+        }
+
+        .value-display {
+            width: 50px;
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .results {
+            margin-top: 30px;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #6b7280;
+        }
+
+        .results b {
+            color: var(--text-color);
+        }
+
+        /* 右側圖表 */
+        .chart-area {
+            flex: 1.2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="controls">
+        <div class="formula">
+            z = <span style="border-bottom: 1px solid black; padding-bottom: 2px;">x - μ</span> / σ
+        </div>
+
+        <div class="slider-group">
+            <span class="label">x</span>
+            <span class="value-display" id="val-x">-1.2</span>
+            <input type="range" id="input-x" min="-5" max="5" step="0.1" value="-1.2">
+        </div>
+
+        <div class="slider-group">
+            <span class="label">μ</span>
+            <span class="value-display" id="val-mu">-0.8</span>
+            <input type="range" id="input-mu" min="-5" max="5" step="0.1" value="-0.8">
+        </div>
+
+        <div class="slider-group">
+            <span class="label">σ</span>
+            <span class="value-display" id="val-sigma">0.5</span>
+            <input type="range" id="input-sigma" min="0.1" max="3" step="0.1" value="0.5">
+        </div>
+
+        <div class="results">
+            <div>z = <span style="text-decoration: underline;">x - μ</span> / σ ≈ <b id="res-z">-0.8</b></div>
+            <div>Φ(z) ≈ <b id="res-phi">21.2%</b></div>
+        </div>
+    </div>
+
+    <div class="chart-area">
+        <canvas id="normalChart" width="500" height="300"></canvas>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('normalChart');
+    const ctx = canvas.getContext('2d');
+
+    const inputs = {
+        x: document.getElementById('input-x'),
+        mu: document.getElementById('input-mu'),
+        sigma: document.getElementById('input-sigma')
+    };
+
+    const displays = {
+        x: document.getElementById('val-x'),
+        mu: document.getElementById('val-mu'),
+        sigma: document.getElementById('val-sigma'),
+        z: document.getElementById('res-z'),
+        phi: document.getElementById('res-phi')
+    };
+
+    // 正態分佈機率密度函數 (PDF)
+    function normalPDF(x, mu, sigma) {
+        return (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mu) / sigma, 2));
+    }
+
+    // 標準正態累積分佈函數 (CDF) 近似值 (Hasting's approximation)
+    function normalCDF(z) {
+        const sign = z < 0 ? -1 : 1;
+        z = Math.abs(z) / Math.sqrt(2);
+        const t = 1 / (1 + 0.3275911 * z);
+        const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
+        const erf = 1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-z * z);
+        return 0.5 * (1 + sign * erf);
+    }
+
+    function draw() {
+        const xVal = parseFloat(inputs.x.value);
+        const muVal = parseFloat(inputs.mu.value);
+        const sigmaVal = parseFloat(inputs.sigma.value);
+
+        // 更新數值顯示
+        displays.x.textContent = xVal.toFixed(1);
+        displays.mu.textContent = muVal.toFixed(1);
+        displays.sigma.textContent = sigmaVal.toFixed(1);
+
+        const z = (xVal - muVal) / sigmaVal;
+        const phi = normalCDF(z);
+
+        displays.z.textContent = z.toFixed(1);
+        displays.phi.textContent = (phi * 100).toFixed(1) + "%";
+
+        // 清除畫布
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 20;
+        
+        // 座標縮放 (定義顯示範圍為 -10 到 10)
+        const minX = -8, maxX = 8;
+        const scaleX = width / (maxX - minX);
+        const scaleY = height * 0.8; 
+
+        function getX(val) { return (val - minX) * scaleX; }
+        function getY(val) { return height - (val * scaleY) - padding; }
+
+        // 1. 繪製陰影區域 (x 之前的面積)
+        ctx.fillStyle = '#dbeafe';
+        ctx.beginPath();
+        ctx.moveTo(getX(minX), getY(0));
+        for (let i = minX; i <= xVal; i += 0.05) {
+            ctx.lineTo(getX(i), getY(normalPDF(i, muVal, sigmaVal)));
+        }
+        ctx.lineTo(getX(xVal), getY(0));
+        ctx.fill();
+
+        // 2. 繪製常態分佈曲線
+        ctx.strokeStyle = '#1d4ed8';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let i = minX; i <= maxX; i += 0.05) {
+            const px = getX(i);
+            const py = getY(normalPDF(i, muVal, sigmaVal));
+            if (i === minX) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // 3. 繪製中心虛線 (μ)
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = '#9ca3af';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(getX(muVal), getY(0));
+        ctx.lineTo(getX(muVal), getY(normalPDF(muVal, muVal, sigmaVal)));
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 4. 繪製當前 x 的標記線
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(getX(xVal), getY(0));
+        ctx.lineTo(getX(xVal), getY(normalPDF(xVal, muVal, sigmaVal)));
+        ctx.stroke();
+
+        // 5. 基底橫線
+        ctx.strokeStyle = '#d1d5db';
+        ctx.beginPath();
+        ctx.moveTo(0, getY(0));
+        ctx.lineTo(width, getY(0));
+        ctx.stroke();
+    }
+
+    // 監聽所有輸入
+    [inputs.x, inputs.mu, inputs.sigma].forEach(input => {
+        input.addEventListener('input', draw);
+    });
+
+    // 初始繪製
+    draw();
+</script>
+
+</body>
+</html>
