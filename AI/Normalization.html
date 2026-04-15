@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Min-Max 正規化視覺化</title>
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --bg-color: #ffffff;
+            --text-color: #374151;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            display: flex;
+            width: 900px;
+            max-width: 95%;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid #f3f4f6;
+            gap: 40px;
+        }
+
+        .controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .formula {
+            font-size: 1.6rem;
+            text-align: center;
+            margin-bottom: 40px;
+            font-family: "Times New Roman", serif;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+
+        .label {
+            width: 45px;
+            font-size: 1.1rem;
+            font-style: italic;
+            font-family: "Times New Roman", serif;
+        }
+
+        .value-display {
+            width: 50px;
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--primary-green);
+            cursor: pointer;
+        }
+
+        .results {
+            margin-top: 30px;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: #6b7280;
+        }
+
+        .results b {
+            color: var(--primary-green);
+        }
+
+        .chart-area {
+            flex: 1.2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="controls">
+        <div class="formula">
+            x' = <span style="border-bottom: 1px solid black; padding-bottom: 2px;">x - x<sub>min</sub></span> / (x<sub>max</sub> - x<sub>min</sub>)
+        </div>
+
+        <div class="slider-group">
+            <span class="label">x</span>
+            <span class="value-display" id="val-x">50</span>
+            <input type="range" id="input-x" min="0" max="100" step="1" value="50">
+        </div>
+
+        <div class="slider-group">
+            <span class="label">x<sub>min</sub></span>
+            <span class="value-display" id="val-min">20</span>
+            <input type="range" id="input-min" min="0" max="40" step="1" value="20">
+        </div>
+
+        <div class="slider-group">
+            <span class="label">x<sub>max</sub></span>
+            <span class="value-display" id="val-max">80</span>
+            <input type="range" id="input-max" min="60" max="100" step="1" value="80">
+        </div>
+
+        <div class="results">
+            <div>原始數值: <b id="res-orig">50</b></div>
+            <div>正規化後 (0-1): <b id="res-norm">0.500</b></div>
+        </div>
+    </div>
+
+    <div class="chart-area">
+        <canvas id="normChart" width="500" height="400"></canvas>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('normChart');
+    const ctx = canvas.getContext('2d');
+
+    const inputs = {
+        x: document.getElementById('input-x'),
+        min: document.getElementById('input-min'),
+        max: document.getElementById('input-max')
+    };
+
+    const displays = {
+        x: document.getElementById('val-x'),
+        min: document.getElementById('val-min'),
+        max: document.getElementById('val-max'),
+        orig: document.getElementById('res-orig'),
+        norm: document.getElementById('res-norm')
+    };
+
+    function draw() {
+        let xVal = parseFloat(inputs.x.value);
+        const minVal = parseFloat(inputs.min.value);
+        const maxVal = parseFloat(inputs.max.value);
+
+        // 確保 x 不會超出範圍（僅為了展示）
+        if (xVal < minVal) xVal = minVal;
+        if (xVal > maxVal) xVal = maxVal;
+
+        const normalized = (xVal - minVal) / (maxVal - minVal);
+
+        displays.x.textContent = xVal;
+        displays.min.textContent = minVal;
+        displays.max.textContent = maxVal;
+        displays.orig.textContent = xVal;
+        displays.norm.textContent = normalized.toFixed(3);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const margin = 50;
+        const chartW = canvas.width - margin * 2;
+        const topY = 120;
+        const bottomY = 280;
+
+        // 繪製兩條軸
+        function drawAxis(y, label, minLabel, maxLabel) {
+            ctx.strokeStyle = '#d1d5db';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(margin, y);
+            ctx.lineTo(margin + chartW, y);
+            ctx.stroke();
+
+            ctx.fillStyle = '#9ca3af';
+            ctx.font = '14px Arial';
+            ctx.fillText(minLabel, margin - 10, y + 25);
+            ctx.fillText(maxLabel, margin + chartW - 10, y + 25);
+            ctx.fillText(label, margin - 40, y - 15);
+        }
+
+        drawAxis(topY, "原始數據範圍", minVal, maxVal);
+        drawAxis(bottomY, "正規化後範圍 (0-1)", "0", "1");
+
+        // 計算位置
+        const topPosX = margin + ((xVal - minVal) / (maxVal - minVal)) * chartW;
+        const bottomPosX = margin + normalized * chartW;
+
+        // 繪製連接線
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = '#10b981';
+        ctx.beginPath();
+        ctx.moveTo(topPosX, topY);
+        ctx.lineTo(bottomPosX, bottomY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 繪製點
+        function drawPoint(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        drawPoint(topPosX, topY, '#10b981');
+        drawPoint(bottomPosX, bottomY, '#10b981');
+
+        // 標註數值
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText(xVal, topPosX - 10, topY - 15);
+        ctx.fillText(normalized.toFixed(2), bottomPosX - 10, bottomY + 35);
+    }
+
+    [inputs.x, inputs.min, inputs.max].forEach(el => el.addEventListener('input', draw));
+    draw();
+</script>
+
+</body>
+</html>
