@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    body { background-color: #0f1117; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; font-family: sans-serif; }
+    .vector-container { display: flex; gap: 40px; align-items: center; }
+    .vector-box { display: flex; flex-direction: column; align-items: center; }
+    .arrow { width: 2px; height: 60px; background: #00cec9; position: relative; transform-origin: bottom center; transition: transform 1s ease-in-out; }
+    .arrow::after { content: ''; position: absolute; top: 0; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 8px solid #00cec9; transform: rotate(180deg); }
+    .label { margin-top: 15px; font-size: 12px; color: #636e72; }
+    .angle-text { font-size: 10px; color: #fab1a0; margin-top: 5px; }
+
+    /* 定義旋轉動畫 */
+    @keyframes rotate-0 { from { transform: rotate(0deg); } to { transform: rotate(0deg); } }
+    @keyframes rotate-1 { from { transform: rotate(0deg); } to { transform: rotate(45deg); } }
+    @keyframes rotate-2 { from { transform: rotate(0deg); } to { transform: rotate(90deg); } }
+    @keyframes rotate-3 { from { transform: rotate(0deg); } to { transform: rotate(135deg); } }
+
+    .r0 { animation: rotate-0 3s infinite alternate; }
+    .r1 { animation: rotate-1 3s infinite alternate; }
+    .r2 { animation: rotate-2 3s infinite alternate; }
+    .r3 { animation: rotate-3 3s infinite alternate; }
+</style>
+</head>
+<body>
+    <div style="margin-bottom: 30px; font-weight: bold; color: #00cec9;">RoPE: Position as Rotation</div>
+    <div class="vector-container">
+        <div class="vector-box"><div class="arrow r0"></div><div class="label">Token 1</div><div class="angle-text">θ × 0</div></div>
+        <div class="vector-box"><div class="arrow r1"></div><div class="label">Token 2</div><div class="angle-text">θ × 1</div></div>
+        <div class="vector-box"><div class="arrow r2"></div><div class="label">Token 3</div><div class="angle-text">θ × 2</div></div>
+        <div class="vector-box"><div class="arrow r3"></div><div class="label">Token 4</div><div class="angle-text">θ × 3</div></div>
+    </div>
+    <div style="margin-top: 30px; font-size: 12px; color: #bdc3c7; max-width: 300px; text-align: center;">
+        隨著位置增加，旋轉角度線性增加。相對位置 = 向量間的夾角。
+    </div>
+</body>
+</html>
