@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    body { background-color: #0f1117; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; font-family: sans-serif; }
+    .ffn-stage { display: flex; align-items: center; gap: 20px; }
+    .layer { border: 2px solid #636e72; display: flex; align-items: center; justify-content: center; transition: all 1s ease; }
+    .input-dim { width: 40px; height: 100px; background: #0984e3; }
+    .hidden-dim { width: 120px; height: 180px; background: #6c5ce7; opacity: 0.3; }
+    .output-dim { width: 40px; height: 100px; background: #00b894; }
+    
+    @keyframes ffn-process {
+        0%, 10% { transform: scale(1); opacity: 0.8; }
+        40%, 60% { transform: scale(1.1); opacity: 1; background: #a29bfe; } /* 升維中 */
+        90%, 100% { transform: scale(1); opacity: 0.8; }
+    }
+    .active { animation: ffn-process 3s infinite alternate; }
+</style>
+</head>
+<body>
+    <div style="margin-bottom: 20px; font-weight: bold; color: #a29bfe;">FFN: Expand & Contract</div>
+    <div class="ffn-stage">
+        <div class="layer input-dim">d_model</div>
+        <div style="font-size: 20px;">→</div>
+        <div class="layer hidden-dim active">4x d_model (Hidden)</div>
+        <div style="font-size: 20px;">→</div>
+        <div class="layer output-dim">d_model</div>
+    </div>
+    <p style="font-size: 12px; color: #bdc3c7; margin-top: 25px; text-align: center;">
+        第一層：映射到高維空間進行非線性特徵提取<br>
+        第二層：將特徵壓縮回原始維度
+    </p>
+</body>
+</html>
