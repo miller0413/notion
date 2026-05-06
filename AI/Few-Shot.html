@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    :root {
+        --bg: #0f1117;
+        --sample-color: #74b9ff;
+        --result-color: #55efc4;
+    }
+    body { background-color: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; font-family: sans-serif; margin: 0; }
+    
+    .visual-box { width: 320px; height: 180px; border: 1px solid #434c5e; position: relative; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,0.02); }
+    
+    .vector-space { position: absolute; width: 100%; height: 100%; }
+    
+    /* 範例路徑 */
+    .arrow { position: absolute; height: 2px; background: var(--sample-color); opacity: 0; transform-origin: left center; }
+    .arrow::after { content: ''; position: absolute; right: 0; top: -3px; border: 4px solid transparent; border-left-color: var(--sample-color); }
+
+    /* 最終預測點 */
+    .prediction { width: 10px; height: 10px; background: var(--result-color); border-radius: 50%; position: absolute; opacity: 0; box-shadow: 0 0 15px var(--result-color); }
+
+    @keyframes show-shot {
+        0% { width: 0; opacity: 0; }
+        20% { width: 80px; opacity: 1; }
+        80% { width: 80px; opacity: 1; }
+        100% { width: 80px; opacity: 0; }
+    }
+
+    @keyframes show-pred {
+        0%, 40% { opacity: 0; transform: scale(0.5); }
+        60%, 80% { opacity: 1; transform: scale(1.2); }
+        100% { opacity: 0; transform: scale(1.5); }
+    }
+
+    .shot-1 { top: 40px; left: 40px; transform: rotate(10deg); animation: show-shot 4s infinite; }
+    .shot-2 { top: 100px; left: 40px; transform: rotate(-5deg); animation: show-shot 4s infinite 0.5s; }
+    .shot-3 { top: 140px; left: 40px; transform: rotate(5deg); animation: show-shot 4s infinite 1s; }
+    
+    .pred-dot { top: 85px; right: 50px; animation: show-pred 4s infinite; }
+</style>
+</head>
+<body>
+
+    <h3 style="margin-bottom: 20px; letter-spacing: 1px;">Few-Shot: Learning from Examples</h3>
+
+    <div class="visual-box">
+        <div class="arrow shot-1"></div>
+        <div class="arrow shot-2"></div>
+        <div class="arrow shot-3"></div>
+        
+        <div style="position:absolute; left:10px; top:10px; font-size:10px; color:var(--sample-color)">Input Examples (Shots)</div>
+        
+        <div class="prediction pred-dot"></div>
+        <div style="position:absolute; right:10px; bottom:10px; font-size:10px; color:var(--result-color)">Pattern Aligned Output</div>
+    </div>
+
+    <p style="font-size: 11px; color: #bdc3c7; margin-top: 25px; text-align: center; line-height: 1.6; max-width: 350px;">
+        <b>範例的力量：</b><br>
+        模型不需要重新訓練，只需透過 Prompt 中的幾組<span style="color:var(--sample-color)">藍色範例</span>，<br>
+        就能將輸出軌跡對齊，產生<span style="color:var(--result-color)">符合預期</span>的綠色結果。
+    </p>
+
+</body>
+</html>
