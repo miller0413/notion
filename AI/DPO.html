@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    :root {
+        --win-color: #00b894;
+        --lose-color: #ff7675;
+        --model-color: #a29bfe;
+    }
+    body { background-color: #0f1117; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; font-family: sans-serif; margin: 0; }
+    
+    .dpo-container { display: flex; flex-direction: column; align-items: center; gap: 30px; position: relative; }
+    
+    .prob-bar { width: 300px; height: 30px; border: 1px solid #636e72; border-radius: 15px; position: relative; overflow: hidden; display: flex; }
+    
+    .win-segment { height: 100%; background: var(--win-color); transition: width 2s ease-in-out; }
+    .lose-segment { height: 100%; background: var(--lose-color); transition: width 2s ease-in-out; }
+
+    .ai-brain { font-size: 40px; margin-bottom: 10px; z-index: 2; }
+    
+    @keyframes dpo-logic {
+        0%, 20% { --win-w: 50%; }
+        80%, 100% { --win-w: 85%; }
+    }
+
+    /* 用來驅動變數的偽元素 */
+    .dpo-container { animation: dpo-update 4s infinite alternate; }
+    @keyframes dpo-update {
+        0%, 30% { --split: 50%; }
+        70%, 100% { --split: 85%; }
+    }
+    
+    /* 由於 CSS 無法直接在 keyframes 動畫寬度，這裡用簡單的 JS 或純 CSS 模擬 */
+    .win-segment { width: var(--split, 50%); }
+    .lose-segment { width: calc(100% - var(--split, 50%)); }
+
+    .label-group { display: flex; width: 300px; justify-content: space-between; font-size: 12px; margin-top: 5px; }
+</style>
+</head>
+<body>
+
+    <h3 style="margin-bottom: 30px; letter-spacing: 1px;">DPO: Direct Probability Shifting</h3>
+
+    <div class="dpo-container" id="box">
+        <div class="ai-brain">🧠</div>
+        
+        <div style="font-size: 14px; color: #bdc3c7;">調整機率分佈 (Logits)</div>
+        
+        <div class="prob-bar">
+            <div class="win-segment"></div>
+            <div class="lose-segment"></div>
+        </div>
+
+        <div class="label-group">
+            <span style="color: var(--win-color);">✔ Chosen (Preferred)</span>
+            <span style="color: var(--lose-color);">✖ Rejected</span>
+        </div>
+    </div>
+
+    <p style="font-size: 11px; color: #bdc3c7; margin-top: 30px; text-align: center; line-height: 1.6; max-width: 400px;">
+        <b>DPO 的數學美感：</b><br>
+        不需要 Reward Model 打分。它直接計算：<br>
+        「目前的模型」與「原始模型」在處理這兩組答案時的機率差異。<br>
+        <b>目標：</b> 最大化好答案的出現機率，同時最小化壞答案的機率。
+    </p>
+
+    <script>
+        // 每兩秒切換一次狀態
+        const box = document.getElementById('box');
+        setInterval(() => {
+            const current = box.style.getPropertyValue('--split') || '50%';
+            box.style.setProperty('--split', current === '50%' ? '85%' : '50%');
+        }, 2000);
+    </script>
+</body>
+</html>
