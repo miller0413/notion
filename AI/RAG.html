@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    :root {
+        --user-color: #74b9ff;
+        --db-color: #55efc4;
+        --ai-color: #a29bfe;
+    }
+    body { background-color: #0f1117; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 480px; font-family: sans-serif; margin: 0; }
+    
+    .rag-flow { display: flex; align-items: center; gap: 40px; position: relative; }
+    
+    .node { width: 80px; height: 80px; border: 2px solid; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; text-align: center; background: rgba(255,255,255,0.05); }
+    
+    .db-node { border-color: var(--db-color); }
+    .ai-node { border-color: var(--ai-color); }
+
+    .data-packet { position: absolute; width: 10px; height: 10px; border-radius: 50%; opacity: 0; }
+
+    /* 動畫路徑 */
+    @keyframes flow-sequence {
+        0% { transform: translate(0, 0); opacity: 0; background: var(--user-color); }
+        10% { opacity: 1; }
+        30% { transform: translate(120px, 0); opacity: 1; } /* 到 DB */
+        50% { transform: translate(120px, 0); background: var(--db-color); scale: 1.5; } /* 在 DB 檢索 */
+        70% { transform: translate(240px, 0); opacity: 1; background: var(--db-color); } /* 到 AI */
+        90% { opacity: 1; transform: translate(240px, 0); scale: 2; background: var(--ai-color); } /* AI 輸出 */
+        100% { opacity: 0; }
+    }
+
+    .active-packet { animation: flow-sequence 4s infinite ease-in-out; left: 35px; top: 35px; }
+
+    .label-box { margin-top: 50px; display: flex; gap: 20px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+    <h3 style="margin-bottom: 40px; letter-spacing: 1px;">RAG: Retrieval Augmented Generation</h3>
+
+    <div class="rag-flow">
+        <div class="node" style="border-color: var(--user-color);">❓<br>Question</div>
+        
+        <div style="width: 40px; height: 2px; background: #333;"></div>
+
+        <div class="node db-node">🗄️<br>Vector DB</div>
+
+        <div style="width: 40px; height: 2px; background: #333;"></div>
+
+        <div class="node ai-node">🧠<br>LLM</div>
+
+        <!-- 流動小球 -->
+        <div class="data-packet active-packet"></div>
+    </div>
+
+    <div class="label-box">
+        <span style="color:var(--user-color)">1. 提問</span>
+        <span style="color:var(--db-color)">2. 找資料 (Retrieve)</span>
+        <span style="color:var(--ai-color)">3. 生成答案 (Augmented)</span>
+    </div>
+
+    <p style="font-size: 11px; color: #bdc3c7; margin-top: 30px; text-align: center; line-height: 1.6; max-width: 450px;">
+        <b>RAG 核心精髓：</b><br>
+        不要逼 AI 硬背所有知識。當用戶提問時，我們先去<span style="color:var(--db-color)">外部資料庫</span>撈出正確答案的片段，<br>
+        再把這些「小抄」餵給<span style="color:var(--ai-color)">大腦 (LLM)</span>。這樣 AI 就能根據事實說話，而不是憑空想像。
+    </p>
+
+</body>
+</html>
