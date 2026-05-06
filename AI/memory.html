@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    :root {
+        --active-msg: #74b9ff;
+        --old-msg: #636e72;
+        --bg: #0f1117;
+    }
+    body { background-color: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; font-family: sans-serif; margin: 0; }
+    
+    .memory-stack { width: 250px; height: 220px; border: 2px solid #444; border-radius: 8px; position: relative; padding: 10px; display: flex; flex-direction: column-reverse; gap: 10px; overflow: hidden; }
+
+    .msg { width: 100%; height: 40px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all 0.8s ease; position: relative; }
+
+    /* 不同的訊息狀態 */
+    .new { background: var(--active-msg); transform: translateY(20px); opacity: 0; }
+    .current { background: rgba(116, 185, 255, 0.3); border: 1px solid var(--active-msg); }
+    .fade { background: rgba(99, 110, 114, 0.2); color: var(--old-msg); }
+
+    .context-window { position: absolute; width: 270px; height: 130px; border: 2px dashed #facd05; left: -10px; top: 100px; border-radius: 10px; pointer-events: none; }
+</style>
+</head>
+<body>
+
+    <h3 style="margin-bottom: 20px; letter-spacing: 1px;">Memory: Sliding Window</h3>
+
+    <div style="position: relative;">
+        <div class="memory-stack" id="stack">
+            <!-- 訊息會動態生成 -->
+        </div>
+        <div class="context-window"></div>
+        <div style="position: absolute; right: -90px; top: 110px; color: #facd05; font-size: 10px; width: 80px;">Context<br>Limit (記憶邊界)</div>
+    </div>
+
+    <p style="font-size: 11px; color: #bdc3c7; margin-top: 30px; text-align: center; line-height: 1.6; max-width: 400px;">
+        <b>對話記憶原理：</b><br>
+        AI 的大腦空間有限。<span style="color:#facd05">黃色虛線</span> 內的訊息是模型能「記得」的範圍。<br>
+        隨著對話進行，新訊息（藍色）進入，舊訊息會逐漸變淡並滑出記憶區塊。
+    </p>
+
+    <script>
+        const stack = document.getElementById('stack');
+        let count = 1;
+
+        function addMessage() {
+            const msg = document.createElement('div');
+            msg.className = 'msg new';
+            msg.innerText = 'Message #' + count++;
+            stack.insertBefore(msg, stack.firstChild);
+
+            setTimeout(() => {
+                msg.classList.remove('new');
+                msg.classList.add('current');
+                
+                const children = stack.querySelectorAll('.msg');
+                if (children.length > 3) {
+                    children[3].classList.remove('current');
+                    children[3].classList.add('fade');
+                }
+                if (children.length > 5) {
+                    stack.removeChild(children[5]);
+                }
+            }, 100);
+        }
+
+        setInterval(addMessage, 2000);
+        addMessage();
+    </script>
+</body>
+</html>
