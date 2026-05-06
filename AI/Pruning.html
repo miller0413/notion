@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    :root {
+        --bg-color: #0f1117;
+        --keep-color: #00b894; /* 亮綠色：保留 */
+        --prune-color: #ff7675; /* 暗紅色：剪掉 */
+        --node-color: #dfe6e9;
+    }
+    body { background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; font-family: sans-serif; margin: 0; }
+    
+    .network-container { display: flex; gap: 100px; align-items: center; position: relative; padding: 20px; }
+    .layer { display: flex; flex-direction: column; gap: 20px; z-index: 2; }
+    .node { width: 14px; height: 14px; background: var(--node-color); border-radius: 50%; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+    
+    .svg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+    
+    /* 基礎線條 */
+    line { stroke-width: 2; transition: all 0.8s ease; }
+
+    /* 保留的線：一直發光 */
+    .keep { stroke: var(--keep-color); stroke-opacity: 0.8; box-shadow: 0 0 5px var(--keep-color); }
+
+    /* 剪掉的線：閃爍並變淡 */
+    .prune { 
+        stroke: var(--prune-color); 
+        stroke-dasharray: 4; 
+        animation: prune-fade 4s infinite alternate ease-in-out; 
+    }
+
+    @keyframes prune-fade {
+        0%, 20% { stroke-opacity: 0.7; stroke-width: 2; }
+        80%, 100% { stroke-opacity: 0.05; stroke-width: 1; stroke: #636e72; }
+    }
+
+    .legend { display: flex; gap: 20px; margin-top: 30px; font-size: 13px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+
+    <h3 style="margin-bottom: 20px; letter-spacing: 2px;">Model Pruning: Efficiency via Sparsity</h3>
+
+    <div class="network-container">
+        <!-- Input Layer -->
+        <div class="layer">
+            <div class="node"></div><div class="node"></div><div class="node"></div><div class="node"></div>
+        </div>
+
+        <svg class="svg-overlay">
+            <!-- 保留的路徑 -->
+            <line x1="15%" y1="18%" x2="85%" y2="18%" class="keep" />
+            <line x1="15%" y1="50%" x2="85%" y2="50%" class="keep" />
+            <line x1="15%" y1="82%" x2="85%" y2="82%" class="keep" />
+            
+            <!-- 被剪掉的路徑 (交叉連線) -->
+            <line x1="15%" y1="18%" x2="85%" y2="50%" class="prune" />
+            <line x1="15%" y1="50%" x2="85%" y2="18%" class="prune" style="animation-delay: 0.5s;" />
+            <line x1="15%" y1="50%" x2="85%" y2="82%" class="prune" style="animation-delay: 1s;" />
+            <line x1="15%" y1="82%" x2="85%" y2="50%" class="prune" style="animation-delay: 1.5s;" />
+            <line x1="15%" y1="18%" x2="85%" y2="82%" class="prune" style="animation-delay: 2s;" />
+        </svg>
+
+        <!-- Hidden Layer -->
+        <div class="layer">
+            <div class="node"></div><div class="node"></div><div class="node"></div><div class="node"></div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div style="width:20px; height:2px; background:var(--keep-color);"></div> Important (Keep)</div>
+        <div class="legend-item"><div style="width:20px; height:2px; background:var(--prune-color); border-top: 2px dashed;"></div> Redundant (Prune)</div>
+    </div>
+
+    <p style="font-size: 11px; color: #bdc3c7; margin-top: 20px; text-align: center; max-width: 400px;">
+        在黑色背景下，你可以看到<span style="color:var(--prune-color)">紅色虛線</span>逐漸變淡並消失。<br>
+        這代表模型正在「遺忘」不重要的連接，只留下最精簡的<span style="color:var(--keep-color)">綠色骨架</span>。
+    </p>
+
+</body>
+</html>
