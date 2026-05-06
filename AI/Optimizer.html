@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    body { background-color: #0f1117; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; font-family: sans-serif; }
+    .contour-map { width: 300px; height: 200px; border: 1px solid #434c5e; position: relative; background: radial-gradient(circle at 70% 70%, #1a1c23 10%, #2e3440 30%, #3b4252 60%); overflow: hidden; }
+    .ball { width: 10px; height: 10px; border-radius: 50%; position: absolute; }
+    
+    /* SGD: 左右橫跳，路徑亂 */
+    .sgd { background: #ff7675; animation: move-sgd 4s infinite linear; }
+    /* Adam: 穩定且快速鎖定目標 */
+    .adam { background: #55efc4; animation: move-adam 4s infinite linear; }
+
+    @keyframes move-sgd {
+        0% { left: 20px; top: 20px; }
+        20% { left: 80px; top: 100px; }
+        40% { left: 40px; top: 150px; }
+        60% { left: 150px; top: 120px; }
+        100% { left: 210px; top: 140px; }
+    }
+    @keyframes move-adam {
+        0% { left: 20px; top: 20px; }
+        30% { left: 100px; top: 60px; }
+        60% { left: 160px; top: 100px; }
+        100% { left: 210px; top: 140px; }
+    }
+    .label-group { display: flex; gap: 20px; margin-top: 20px; font-size: 12px; }
+</style>
+</head>
+<body>
+    <div style="font-weight: bold; margin-bottom: 10px;">Optimizer: Path Finding</div>
+    <div class="contour-map">
+        <div class="ball sgd"></div>
+        <div class="ball adam"></div>
+        <!-- 目標點 -->
+        <div style="position:absolute; right:75px; bottom:45px; color:#f1c40f;">★ Target</div>
+    </div>
+    <div class="label-group">
+        <div style="color:#ff7675">● SGD (Noisy/Slow)</div>
+        <div style="color:#55efc4">● AdamW (Stable/Fast)</div>
+    </div>
+    <p style="font-size: 11px; color: #bdc3c7; margin-top: 15px;">AdamW 會自適應調整方向，路徑比 SGD 更直觀且穩定。</p>
+</body>
+</html>
