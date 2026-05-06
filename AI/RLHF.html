@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    :root {
+        --ai-color: #a29bfe;
+        --human-color: #fab1a0;
+        --reward-color: #00b894;
+    }
+    body { background-color: #0f1117; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 450px; font-family: sans-serif; margin: 0; }
+    
+    .rlhf-stage { display: flex; gap: 40px; align-items: center; position: relative; }
+    
+    .model-box { border: 2px solid var(--ai-color); padding: 15px; border-radius: 12px; background: rgba(162, 155, 254, 0.1); width: 100px; text-align: center; }
+    
+    .options { display: flex; flex-direction: column; gap: 20px; }
+    .option { border: 1px solid #636e72; padding: 10px; border-radius: 8px; font-size: 10px; position: relative; width: 120px; opacity: 0; }
+    
+    .human { font-size: 30px; position: relative; }
+    .feedback { position: absolute; font-size: 20px; top: -20px; left: 50%; transform: translateX(-50%); opacity: 0; }
+
+    @keyframes rlhf-loop {
+        0% { transform: scale(1); }
+        10% { transform: scale(1.05); } /* 模型思考 */
+        20% { opacity: 0; } /* 選項出現 */
+        30% { opacity: 1; }
+        50% { border-color: var(--reward-color); box-shadow: 0 0 10px var(--reward-color); } /* 人類選中 A */
+        70% { transform: translateY(0); } /* 反饋回傳 */
+        100% { transform: scale(1); }
+    }
+
+    .opt-a { animation: slide-in 5s infinite; }
+    .opt-b { animation: slide-in 5s infinite; animation-delay: 0.2s; }
+    
+    @keyframes slide-in {
+        0%, 20% { transform: translateX(-20px); opacity: 0; }
+        30%, 80% { transform: translateX(0); opacity: 1; }
+        90%, 100% { opacity: 0; }
+    }
+
+    .heart { animation: heart-beat 5s infinite; color: var(--reward-color); }
+    @keyframes heart-beat {
+        0%, 40% { opacity: 0; transform: scale(0.5); }
+        50%, 80% { opacity: 1; transform: scale(1.2); }
+        90%, 100% { opacity: 0; }
+    }
+
+</style>
+</head>
+<body>
+
+    <h3 style="margin-bottom: 40px; letter-spacing: 1px;">RLHF: Aligning with Human Values</h3>
+
+    <div class="rlhf-stage">
+        <div class="model-box">
+            <div style="font-size: 24px;">🤖</div>
+            <div style="font-size: 10px; margin-top: 5px;">LLM</div>
+        </div>
+
+        <div class="options">
+            <div class="option opt-a" style="border-color: var(--reward-color);">Ans A: Helpful & Safe</div>
+            <div class="option opt-b">Ans B: Harmful content</div>
+        </div>
+
+        <div class="human">
+            👤
+            <div class="feedback heart">👍</div>
+        </div>
+    </div>
+
+    <p style="font-size: 11px; color: #bdc3c7; margin-top: 40px; text-align: center; line-height: 1.6; max-width: 400px;">
+        1. 模型針對問題產生多個候選答案。<br>
+        2. 人類（或獎勵模型）進行<span style="color:var(--reward-color)">排序與評分</span>。<br>
+        3. 模型透過強化學習（PPO）調整參數，未來更傾向產生高分答案。
+    </p>
+
+</body>
+</html>
