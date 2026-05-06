@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    body { background-color: #0f1117; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; font-family: sans-serif; }
+    .plot-container { width: 300px; height: 200px; border-left: 2px solid white; border-bottom: 2px solid white; position: relative; }
+    .dot { width: 6px; height: 6px; background: #fab1a0; border-radius: 50%; position: absolute; }
+    svg { position: absolute; top: 0; left: 0; }
+    .path-overfit { stroke: #ff7675; stroke-width: 2; fill: none; stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 4s infinite linear; }
+    .path-regularized { stroke: #00b894; stroke-width: 3; fill: none; stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 4s infinite linear; animation-delay: 0.5s; }
+    
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+</style>
+</head>
+<body>
+    <div style="margin-bottom: 20px; font-weight: bold;">
+        <span style="color:#ff7675">Overfitting</span> vs <span style="color:#00b894">Regularized</span>
+    </div>
+    <div class="plot-container">
+        <!-- 模擬點 -->
+        <div class="dot" style="left:20px; bottom:30px;"></div>
+        <div class="dot" style="left:80px; bottom:120px;"></div>
+        <div class="dot" style="left:150px; bottom:70px;"></div>
+        <div class="dot" style="left:220px; bottom:160px;"></div>
+        <div class="dot" style="left:280px; bottom:140px;"></div>
+        
+        <svg width="300" height="200">
+            <!-- 過擬合線：扭曲 -->
+            <path class="path-overfit" d="M 20 170 Q 50 20 80 80 T 150 130 T 220 40 T 280 60" />
+            <!-- 正則化線：平滑 -->
+            <path class="path-regularized" d="M 20 160 C 100 100, 200 100, 280 40" />
+        </svg>
+    </div>
+    <p style="font-size: 11px; color: #bdc3c7; margin-top: 15px;">正則化強迫模型放棄「死記硬背」，改用「平滑曲線」理解數據。</p>
+</body>
+</html>
