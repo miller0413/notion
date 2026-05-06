@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    :root {
+        --template-color: #636e72;
+        --injection-color: #fab1a0;
+        --prompt-color: #00d2ff;
+        --bg: #0f1117;
+    }
+    body { background-color: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 450px; font-family: sans-serif; margin: 0; }
+    
+    .assembly-line { display: flex; flex-direction: column; gap: 20px; align-items: center; }
+    
+    .source-box { display: flex; gap: 15px; }
+    .source { padding: 8px 12px; border: 1px solid var(--injection-color); border-radius: 6px; font-size: 10px; color: var(--injection-color); opacity: 0.6; }
+
+    .prompt-template { 
+        width: 280px; 
+        border: 2px solid var(--template-color); 
+        padding: 20px; 
+        border-radius: 12px; 
+        position: relative; 
+        background: rgba(255,255,255,0.02);
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .placeholder { border: 1px dashed var(--injection-color); padding: 5px; margin: 5px 0; font-size: 11px; text-align: center; transition: all 0.5s; }
+
+    /* 注入動畫 */
+    @keyframes inject-flow {
+        0% { transform: translateY(-20px); opacity: 0; }
+        30% { transform: translateY(0); opacity: 1; background: rgba(250, 177, 160, 0.2); }
+        70% { transform: translateY(0); opacity: 1; background: rgba(250, 177, 160, 0.2); }
+        100% { transform: translateY(20px); opacity: 0; }
+    }
+
+    .active-injection { animation: inject-flow 4s infinite; }
+
+    .final-output { margin-top: 20px; font-size: 12px; color: var(--prompt-color); font-weight: bold; opacity: 0; animation: fade-in-out 4s infinite; }
+    @keyframes fade-in-out { 0%, 40% { opacity: 0; } 60%, 80% { opacity: 1; } 100% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+    <h3 style="margin-bottom: 30px; letter-spacing: 1px;">Context Injection: Assembly Process</h3>
+
+    <div class="assembly-line">
+        <div class="source-box">
+            <div class="source">PDF Doc</div>
+            <div class="source">User History</div>
+            <div class="source">Real-time Data</div>
+        </div>
+
+        <div style="font-size: 20px;">⬇️</div>
+
+        <div class="prompt-template">
+            <div style="font-size: 10px; color: #666; margin-bottom: 5px;">PROMPT TEMPLATE</div>
+            <div style="font-size: 11px;">You are a helpful assistant...</div>
+            <div class="placeholder active-injection">{ INJECTED CONTEXT }</div>
+            <div style="font-size: 11px;">User Query: "How's the weather?"</div>
+        </div>
+
+        <div class="final-output">🚀 Sent to LLM Brain</div>
+    </div>
+
+    <p style="font-size: 11px; color: #bdc3c7; margin-top: 30px; text-align: center; line-height: 1.6; max-width: 400px;">
+        <b>運作原理：</b><br>
+        系統從不同來源提取<span style="color:var(--injection-color)">外部資料</span>，動態填入 Prompt 模板的佔位符中。<br>
+        這使得同一套指令能針對不同背景產出<span style="color:var(--prompt-color)">個人化且精準</span>的答案。
+    </p>
+
+</body>
+</html>
