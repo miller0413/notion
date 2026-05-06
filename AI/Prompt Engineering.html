@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    :root {
+        --bg: #0f1117;
+        --vague-color: #636e72;
+        --struct-color: #00d2ff;
+        --success-color: #facd05;
+    }
+    body { background-color: var(--bg); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; margin: 0; }
+    
+    .comparison-container { display: flex; gap: 50px; }
+    
+    .panel { width: 250px; height: 300px; border: 1px solid #2d3436; border-radius: 12px; padding: 15px; position: relative; background: rgba(255,255,255,0.02); }
+    
+    /* 模糊指令的效果 */
+    .scatter-dots { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+    .dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--vague-color); opacity: 0.5; animation: blink 2s infinite; }
+
+    /* 結構指令的效果 */
+    .guide-line { position: absolute; width: 2px; height: 0; background: var(--struct-color); left: 50%; bottom: 40px; transform: translateX(-50%); box-shadow: 0 0 15px var(--struct-color); transition: height 2s ease; }
+    .active .guide-line { height: 180px; }
+    
+    .target-box { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 60px; height: 60px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.5s; }
+    .active .target-box { border-color: var(--success-color); color: var(--success-color); box-shadow: 0 0 20px rgba(250, 205, 5, 0.3); }
+
+    .btn { margin-top: 20px; padding: 10px 20px; background: var(--struct-color); border: none; border-radius: 5px; color: black; font-weight: bold; cursor: pointer; }
+    
+    @keyframes blink { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.8; } }
+</style>
+</head>
+<body>
+
+    <h3 style="letter-spacing: 2px;">Prompt Engineering: Entropy to Order</h3>
+
+    <div class="comparison-container">
+        <!-- Vague Prompt -->
+        <div class="panel">
+            <div style="font-size: 12px; color: var(--vague-color); margin-bottom: 10px;">Vague: "Write a report"</div>
+            <div class="scatter-dots">
+                <div class="dot" style="top:50px; left:40px;"></div>
+                <div class="dot" style="top:120px; left:180px;"></div>
+                <div class="dot" style="top:200px; left:90px;"></div>
+                <div class="dot" style="top:80px; left:150px;"></div>
+                <div class="dot" style="top:250px; left:30px;"></div>
+            </div>
+            <div class="target-box" style="opacity: 0.3;">?</div>
+            <p style="position:absolute; bottom:10px; font-size: 10px; color: #666;">輸出隨機、可能產生幻覺</p>
+        </div>
+
+        <!-- Structured Prompt -->
+        <div class="panel" id="structPanel">
+            <div style="font-size: 12px; color: var(--struct-color); margin-bottom: 10px;">Structured: "Act as CEO..."</div>
+            <div class="guide-line"></div>
+            <div class="target-box">🎯</div>
+            <p style="position:absolute; bottom:10px; font-size: 10px; color: #666;">輸出精準、符合邏輯與格式</p>
+        </div>
+    </div>
+
+    <button class="btn" onclick="document.getElementById('structPanel').classList.toggle('active')">切換提示結構化</button>
+
+    <p style="font-size: 11px; color: #bdc3c7; margin-top: 30px; text-align: center; line-height: 1.6;">
+        <b>點擊按鈕：</b><br>
+        你會發現，當我們加入「結構」後，AI 原本漫無目的的運算能量（灰色點點），<br>
+        會被匯聚成一條強而有力的路徑（藍色光束），最終準確擊中目標。
+    </p>
+
+    <script>
+        // 自動循環展示
+        setInterval(() => {
+            document.getElementById('structPanel').classList.toggle('active');
+        }, 3000);
+    </script>
+</body>
+</html>
