@@ -1,0 +1,58 @@
+<!DOCTYPE html><html><head><style>
+    :root {
+        --llm-color: #a29bfe;
+        --tool-color: #55efc4;
+        --api-color: #74b9ff;
+        --bg: #0d1117;
+    }
+    body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 450px; font-family: 'Segoe UI', sans-serif; margin: 0; }
+    
+    .container { display: flex; align-items: center; gap: 40px; position: relative; }
+    
+    /* 大腦 */
+    .brain { width: 90px; height: 90px; background: var(--llm-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #111; position: relative; z-index: 2; }
+    
+    /* 工具箱 */
+    .toolbox { width: 100px; padding: 10px; border: 2px solid #444; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .tool-icon { width: 30px; height: 30px; background: #333; border-radius: 5px; border: 1px solid var(--tool-color); }
+
+    /* 指令流 */
+    .command { position: absolute; font-family: monospace; font-size: 10px; color: var(--tool-color); opacity: 0; white-space: nowrap; }
+
+    @keyframes send-cmd {
+        0% { left: 100px; opacity: 0; transform: translateY(0); }
+        20% { opacity: 1; }
+        80% { opacity: 1; }
+        100% { left: 300px; opacity: 0; transform: translateY(0); }
+    }
+    .active-cmd { animation: send-cmd 3s infinite linear; }
+
+    .external-system { width: 100px; height: 80px; border: 2px solid var(--api-color); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--api-color); text-align: center; }
+
+</style></head><body>
+
+    <h3 style="margin-bottom: 40px;">Tool Use: From Brain to Action</h3>
+
+    <div class="container">
+        <div>
+            <div style="font-size: 10px; text-align: center; margin-bottom: 5px; color: #777;">TOOLSET</div>
+            <div class="toolbox">
+                <div class="tool-icon" style="background: var(--tool-color); opacity: 0.3;"></div>
+                <div class="tool-icon" style="background: var(--tool-color); opacity: 0.8;"></div>
+                <div class="tool-icon" style="background: var(--tool-color); opacity: 0.5;"></div>
+                <div class="tool-icon" style="background: var(--tool-color); opacity: 0.2;"></div>
+            </div>
+        </div>
+
+        <div class="brain">LLM</div>
+        
+        <div class="command active-cmd">{ "call": "search_api" }</div>
+
+        <div class="external-system">API / Real World<br>Execution</div>
+    </div>
+
+    <p style="font-size: 12px; color: #888; margin-top: 50px; text-align: center; max-width: 400px; line-height: 1.6;">
+        <b>運作原理：</b><br>
+        當 LLM 發現自身能力不足以回答時，會從<span style="color:var(--tool-color)">工具箱</span>選擇工具，並輸出<span style="color:var(--tool-color)">結構化參數</span>觸發<span style="color:var(--api-color)">外部執行</span>。
+    </p>
+</body></html>
