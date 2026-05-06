@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    :root {
+        --fp-color: #74b9ff; /* 高精度藍 */
+        --int-color: #fab1a0; /* 量化後橘 */
+        --bg-color: #0f1117;
+    }
+    body { background-color: var(--bg-color); color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; margin: 0; overflow: hidden; }
+    
+    .dashboard { display: flex; gap: 30px; align-items: flex-start; }
+    
+    /* 左側：空間格點 */
+    .view-box { width: 220px; height: 220px; border: 1px solid #434c5e; position: relative; background: rgba(255,255,255,0.02); border-radius: 8px; }
+    .grid { position: absolute; width: 100%; height: 100%; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); opacity: 0.1; }
+    .grid div { border: 0.5px solid #fff; }
+
+    /* 右側：波形階梯 */
+    .graph-box { width: 300px; height: 220px; border-left: 2px solid #636e72; border-bottom: 2px solid #636e72; position: relative; }
+
+    /* 核心動畫：球體對齊 */
+    .weight-dot { position: absolute; width: 10px; height: 10px; border-radius: 50%; filter: drop-shadow(0 0 5px var(--fp-color)); animation: quant-weight 4s infinite alternate ease-in-out; }
+    
+    @keyframes quant-weight {
+        0%, 30% { transform: translate(var(--x1), var(--y1)); background: var(--fp-color); border-radius: 50%; }
+        70%, 100% { transform: translate(var(--x2), var(--y2)); background: var(--int-color); border-radius: 2px; box-shadow: none; }
+    }
+
+    /* 核心動畫：波形變階梯 */
+    .wave-path { fill: none; stroke-width: 3; transition: opacity 0.5s; }
+    .fp-path { stroke: var(--fp-color); opacity: 0.8; }
+    .int-path { stroke: var(--int-color); stroke-width: 4; opacity: 0; animation: show-int 4s infinite alternate; }
+
+    @keyframes show-int { 0%, 30% { opacity: 0; } 70%, 100% { opacity: 1; } }
+
+    .label-tag { font-size: 12px; margin-top: 10px; text-align: center; font-weight: bold; }
+    .desc { font-size: 11px; color: #bdc3c7; margin-top: 20px; max-width: 500px; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+    <h3 style="margin-bottom: 30px; letter-spacing: 1px;">Quantization: Space & Precision Merged</h3>
+
+    <div class="dashboard">
+        <!-- 左邊：展現權重被「吸入」格點 -->
+        <div class="container">
+            <div class="view-box">
+                <div class="grid"> <!-- 8x8 Grid -->
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+                </div>
+                <!-- 模擬權重點 -->
+                <div class="weight-dot" style="--x1:53px; --y1:42px; --x2:55px; --y2:55px;"></div>
+                <div class="weight-dot" style="--x1:130px; --y1:88px; --x2:137px; --y2:82px; animation-delay: 0.2s;"></div>
+                <div class="weight-dot" style="--x1:180px; --y1:30px; --x2:192px; --y2:27px; animation-delay: 0.4s;"></div>
+                <div class="weight-dot" style="--x1:20px; --y1:160px; --x2:27px; --y2:165px; animation-delay: 0.1s;"></div>
+                <div class="weight-dot" style="--x1:90px; --y1:180px; --x2:82px; --y2:192px; animation-delay: 0.5s;"></div>
+            </div>
+            <div class="label-tag" style="color:var(--int-color)">Weight Alignment</div>
+        </div>
+
+        <!-- 右邊：展現數值變成「階梯」 -->
+        <div class="container">
+            <div class="graph-box">
+                <svg viewBox="0 0 300 220" style="position:absolute; top:0; left:0;">
+                    <!-- FP16 原始波形 -->
+                    <path class="wave-path fp-path" d="M0,110 C50,20 100,20 150,110 S250,200 300,110" />
+                    <!-- 量化後的階梯 -->
+                    <path class="wave-path int-path" d="M0,110 H50 V40 H100 V40 H150 V110 H200 V180 H250 V180 H300 V110" />
+                </svg>
+            </div>
+            <div class="label-tag" style="color:var(--fp-color)">Precision Loss</div>
+        </div>
+    </div>
+
+    <div class="desc">
+        <b>量化 (Quantization) 詳細原理：</b><br>
+        1. <b>Weight Alignment (左圖)：</b> 原本每個參數可以用任意微小的數值儲存（FP16）。量化後，我們強制讓它們「對齊」到預設的格點上（INT4）。因為只需要紀錄「格點編號」，儲存空間瞬間縮小。<br>
+        2. <b>Precision Loss (右圖)：</b> 這種強制的對齊會導致數值從「滑梯」變成「階梯」。雖然形狀大致不變，但細節遺失了。如果階梯太稀疏（Bit 太低），模型就會因為「誤差太劇烈」而失效。
+    </div>
+
+</body>
+</html>
