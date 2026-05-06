@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Intuitive Fusion Visualization</title>
+    <style>
+        :root {
+            --detail-color: #74b9ff;  /* 藍色：冷靜的細節 */
+            --semantic-color: #fd79a8; /* 粉色：熱情的語義 */
+            --bg: #0b0e14;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: white;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .main-stage {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            perspective: 1000px;
+        }
+
+        /* 畫布容器 */
+        .canvas-box {
+            width: 280px;
+            height: 350px;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.02);
+            border-radius: 15px;
+        }
+
+        /* 標題 */
+        .label {
+            position: absolute;
+            top: -40px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* --- 左：細節點雲 --- */
+        .point-cloud {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 15px;
+        }
+        .dot {
+            width: 4px;
+            height: 4px;
+            background: var(--detail-color);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--detail-color);
+            opacity: 0.4;
+        }
+
+        /* --- 中：融合動畫 --- */
+        .fusion-arrow {
+            font-size: 30px;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* --- 右：語義熱圖 --- */
+        .semantic-blob {
+            width: 120px;
+            height: 120px;
+            background: var(--semantic-color);
+            filter: blur(40px);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        /* --- 最終融合展示：點與色的對齊 --- */
+        .fusion-final {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 融合後的點（被啟動了） */
+        .active-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--semantic-color), 0 0 5px white;
+            animation: highlight 2s infinite;
+        }
+
+        /* 動畫 */
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translateX(-5px); }
+            50% { opacity: 1; transform: translateX(5px); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.2) translate(5px, 10px); }
+        }
+
+        @keyframes highlight {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.5); opacity: 1; }
+        }
+
+        .desc {
+            margin-top: 60px;
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.8;
+            color: #aaa;
+            font-size: 0.95rem;
+        }
+
+        b { color: var(--semantic-color); }
+        i { color: var(--detail-color); font-style: normal; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2 style="margin-bottom: 80px;">特徵融合：從「看到」到「認出」</h2>
+
+    <div class="main-stage">
+        <!-- 左側：純細節 -->
+        <div class="canvas-box">
+            <div class="label" style="color: var(--detail-color);">細節 (Detail)<br><small>「只有坐標與線條」</small></div>
+            <div class="point-cloud">
+                <!-- 產生 32 個小點 -->
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+        </div>
+
+        <div class="fusion-arrow"> + </div>
+
+        <!-- 右側：純語義 -->
+        <div class="canvas-box">
+            <div class="label" style="color: var(--semantic-color);">語義 (Semantic)<br><small>「知道它是貓，但很模糊」</small></div>
+            <div class="semantic-blob"></div>
+        </div>
+
+        <div class="fusion-arrow"> = </div>
+
+        <!-- 最終結果 -->
+        <div class="canvas-box" style="border: 1px solid var(--semantic-color); background: rgba(253, 121, 168, 0.05);">
+            <div class="label">融合結果 (Fusion)</div>
+            <div class="fusion-final">
+                <!-- 語義濾鏡 -->
+                <div class="semantic-blob" style="width: 100px; height: 100px; opacity: 0.3; filter: blur(30px);"></div>
+                <!-- 被啟動的精確點 -->
+                <div class="active-dot" style="top: 40%; left: 45%;"></div>
+                <div class="active-dot" style="top: 45%; left: 55%;"></div>
+                <div class="active-dot" style="top: 55%; left: 48%;"></div>
+                <div class="active-dot" style="top: 50%; left: 40%;"></div>
+                <div class="active-dot" style="top: 60%; left: 52%;"></div>
+                <div style="font-size: 12px; margin-top: 150px; color: white; background: var(--semantic-color); padding: 2px 8px; border-radius: 4px;">目標鎖定</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="desc">
+        當 <i>細節</i> 遇到 <b>語義</b>：<br>
+        就像在地圖上把「衛星雲圖」疊加在「街道座標」上。<br>
+        電腦不再只是看到一堆像素，而是知道 <b>「在這組座標裡，有一隻貓」</b>。
+    </div>
+
+</body>
+</html>
